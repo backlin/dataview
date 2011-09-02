@@ -1,0 +1,3 @@
+Korta ner långa fältnamn i entry.view
+factor scalar tolkas som numeric scalar i entry view
+

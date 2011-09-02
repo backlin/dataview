@@ -1,0 +1,22 @@
+Encoding: UTF-8
+Package: dataview
+Type: Package
+Title: Human readable data presentation
+Version: 1.4-2
+Date: 2011-07-16
+Author: Christofer Backlin
+Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
+Depends: xtermStyle
+Description: This package provides clear, informative and colorfull ways of
+presenting the contents of data.frame, list, environment etc. in the prompt.
+
+Ideally this package should be used in terminals supporting xterm 256 colour
+mode, e.g. the standard Ubuntu terminal. The Mac OS X terminal (as of Snow
+Leopard) only support ANSI colour, which still works but doesn't look as nice.
+On Windows systems no colouring is supported.
+
+If the output of functions like 'whos' is a mess or somehow doesn't look like it
+should check the help for the functions 'style' and 'style.mode' of the
+'xtermStyle' package.
+License: GPL (>=2)
+LazyLoad: yes
