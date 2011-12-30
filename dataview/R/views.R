@@ -29,7 +29,7 @@
 ##' whos.all()
 ##' @author Christofer \enc{Bäcklin}{Backlin}
 ##' @export
-whos <- function(pattern="", envir=globalenv(), exclude=getOption("whos.mask")){
+whos <- function(pattern="", envir=as.environment(-1), exclude=getOption("whos.mask")){
     # Check if the user specified a pattern, environment or both
     if(missing(pattern)){ pattern <- ""
     } else if(!is.character(pattern) && missing(envir)) {
@@ -51,32 +51,34 @@ whos <- function(pattern="", envir=globalenv(), exclude=getOption("whos.mask")){
         cat("No objects found\n")
     } else {
         # Make an object/property matrix (objects as rows, properties as columns)
-        obj <- matrix("", n, 6)
+        obj <- matrix("", n, 7, dimnames=list(NULL, c("name", "class", "S4", "dim", "bytes", "bytes.prefix", "comment")))
         # Go through all objects and assess their properties
-        obj[,1] <- obj.name
+        obj[,"name"] <- obj.name
         total.size <- 0
         for(i in 1:n){
             o <- objfun(envir, obj.name[i])
-            obj[i,2] <- if(length(class(o)) > 1){
+            obj[i,"class"] <- if(length(class(o)) > 1){
                 paste(class(o)[1], "...")
             } else if(class(o) == "factor"){
                 sprintf("factor (%i)", length(levels(o)))
             } else class(o)
-            if(obj[i,2] %in% c("matrix", "array")) obj[i,2] <- paste(mode(o), obj[i,2])
-            obj[i,3] <- if(isS4(o)) "S4  " else ""
-            obj[i,4] <- dimfun(o)
-            obj[i,5:6] <- sizefun(o)
+            if(obj[i,"class"] %in% c("matrix", "array")) obj[i,"class"] <- paste(mode(o), obj[i,"class"])
+            obj[i,"S4"] <- if(isS4(o)) "S4  " else ""
+            obj[i,"dim"] <- dimfun(o)
+            obj[i, c("bytes", "bytes.prefix")] <- sizefun(o)
             total.size <- total.size + object.size(o)
+            obj[i,"comment"] <- if(!is.blank(attr(o, "comment"))) "?!  " else ""  # comment() can be slow for large objects, use attr() instead
         }
-        if(any(obj[,3] != "")) obj[obj[,3] == "",3] <- "    "
+        if(any(obj[,"S4"] != "")) obj[obj[,"S4"] == "","S4"] <- "    "
+        if(any(obj[,"comment"] != "")) obj[obj[,"comment"] == "","comment"] <- "    "
         # Determine how many characters each column occupies i.e. length of longest entry in each column
         nc <- apply(obj, 2, function(x) max(nchar(x)))
         # Output table
         for(i in 1:n){
             cat(style.dim(sprintf(paste("%", ceiling(log10(n+1)), "i", sep=""), i)),
                 style.auto(objfun(envir, obj.name[i]),
-                    sprintf(paste("  %-",nc[1],"s  %-",nc[2],"s  %s%-",nc[4],"s %6.1f %-3s  ", sep=""),
-                        obj[i,1], obj[i,2], obj[i,3], obj[i,4], as.numeric(obj[i,5]), obj[i,6])),
+                    sprintf(paste("  %-",nc["name"],"s  %-",nc["class"],"s  %s%-",nc["dim"],"s %6.1f %-3s  %s", sep=""),
+                        obj[i,"name"], obj[i,"class"], obj[i,"S4"], obj[i,"dim"], as.numeric(obj[i,"bytes"]), obj[i,"bytes.prefix"], obj[i,"comment"])),
                 "\n", sep="")
         }
         # Output total size of all objects in table (not nessecarily all objects in workspace)
@@ -91,14 +93,11 @@ whos <- function(pattern="", envir=globalenv(), exclude=getOption("whos.mask")){
 
 ##' Set a default exclusion mask for \code{\link{whos}}.
 ##'
-##' Set a default exclusion mask for \code{\link{whos}}.
-##'
 ##' @param lst List of object names. These will be hidden from view. Defaults to
 ##'   all objects in \code{envir}.
 ##' @param envir Environment to work in.
 ##' @return Nothing. The mask is stored as `whos.mask' in the global option list.
 ##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @rdname whos
 ##' @export
 whos.set.mask <- function(lst, envir=globalenv()){
     # This function sets the default exclusion mask for the `whos' function.
@@ -275,15 +274,13 @@ heat.view <- function(x, pal, rng, width){
     } else if(is.numeric(x)){
         if(missing(rng)){
             range.domain <- sign(sum(sign( range(x, na.rm=TRUE) )))
-        } else {
-            range.domain <- sign(sum(sign( rng )))
-        }
-        if(missing(rng)){
             rng <- if(range.domain == 0){  # Crossing zero
                  c(-1, 1)*max(abs(x), na.rm=TRUE)
             } else {
-                c(min(x, na.rm=TRUE), max(x, na.rm=TRUE))
+                range(x, na.rm=TRUE)
             }
+        } else {
+            range.domain <- sign(sum(sign(rng)))
         }
         if(missing(pal)){
             pal <- switch(as.character(range.domain),
@@ -308,12 +305,13 @@ heat.view <- function(x, pal, rng, width){
             }
         }
         legend.str <- rep("",length(levels(x)))
-        for(i in 1:length(levels(x))) legend.str[i] <- style(levels(x)[i], fg=pal[i])
+        for(i in 1:length(levels(x))) legend.str[i] <- style(sprintf("`%s`", levels(x)[i]), fg=pal[i])
+        if(length(legend.str) > 10){
+            legend.str <- c(legend.str[1:9], "...", legend.str[length(legend.str)])
+        }
         col <- pal[as.integer(x)]
     } else
         stop("Datatype not yet supported.")
-
-
 
     if(is.blank(dim(x)) || length(dim(x)) == 1){
         n <- length(x)
@@ -322,20 +320,24 @@ heat.view <- function(x, pal, rng, width){
             width <- terminal.width - n.digits - 2
             width <- floor(width / 10)*10
         }
+        # Go through the rows
         for(i in 1:ceiling(n/width)){
             printf(sprintf("%%%ii  ", n.digits), (i-1)*width+1)
             prev.style <- -1
             for(j in ((i-1)*width+1):min(n, i*width)){
                 # Only change style if the new element differs from last,
-                # easier to parse for slow computers
+                # easier to parse
                 if(is.na(col[j])){
                     if(prev.style != -1) cat(style.clear(make.default=FALSE))
                     prev.style <- -1
-                } else if(col[j] != prev.style){
-                    cat(style.set(bg=col[j], make.default=FALSE))
-                    prev.style <- col[j]
+                    cat("-")
+                } else {
+                    if(col[j] != prev.style){
+                        cat(style.set(bg=col[j], make.default=FALSE))
+                        prev.style <- col[j]
+                    }
+                    cat(" ")
                 }
-                cat(" ")
             }
             printf("%s\n", style.get())
         }
@@ -351,9 +353,13 @@ heat.view <- function(x, pal, rng, width){
                 if(is.na(col[i,j])){
                     if(prev.style != -1) cat(style.clear(make.default=FALSE))
                     prev.style <- -1
-                } else if(col[i,j] != prev.style){
-                    cat(style.set(bg=col[i,j], make.default=FALSE))
-                    prev.style <- col[i,j]
+                    cat("-")
+                } else {
+                    if(col[i,j] != prev.style){
+                        cat(style.set(bg=col[i,j], make.default=FALSE))
+                        prev.style <- col[i,j]
+                    }
+                    cat(" ")
                 }
                 cat(chr)
             }
@@ -368,47 +374,6 @@ heat.view <- function(x, pal, rng, width){
                legend.str[length(legend.str)])
     } else {
         printf("\n   %s\n\n", paste(legend.str, collapse=" "))
-    }
-}
-
-
-##' Display contents of a vector or list as line wrapped text
-##'
-##' @param x Vector or list to be displayed.
-##' @return Nothing
-##' @examples
-##' x <- rep(NA, 6)
-##' for(i in 1:6) x[i] <- paste(c("m", "a", "r", "u", "l", "k", " ")[1+floor(7*runif(100+floor(500*runif(1))))], collapse="")
-##' wrap.view(x)
-##' 
-##' x <- list(1:9, stuff=Sys.info(), today=date(), model=Outcome ~ Variables)
-##' wrap.view(x)
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
-wrap.view <- function(x){
-    terminal.width <- if(is.blank(Sys.getenv("COLUMNS"))) 80L else as.integer(Sys.getenv("COLUMNS"))
-    indent <- 4
-    indent.str <- paste(rep(" ", indent), collapse="")
-    for(i in 1:length(x)){
-        printf("%s:\n", style(if(is.blank(names(x)[i])) i else names(x)[i], font.style="bold"))
-        obj <- objfun(x, i)
-        if(mode(obj) %in% c("numeric", "logical", "character", "factor")){
-            obj <- paste(as.character(obj), collapse=", ")
-            while(!is.blank(obj)){
-                obj <- sub("^\\s*", "", obj)
-                l <- regexpr(sprintf("^.{,%i}\\b", terminal.width-indent-1), obj)
-                l <- if(attr(l, "match.length") != -1) attr(l, "match.length") else terminal.width - 4
-                printf("%s%s\n", indent.str, substr(obj, 0, l))
-                obj <- substr(obj, l+1, nchar(obj))
-            }
-            printf("    %s\n", obj)
-        } else {
-            printf("%s%s\n\n", indent.str, style.auto(obj,
-                if(mode(obj) != class(obj)){
-                    sprintf("%s <%s>", mode(obj), class(obj))
-                } else
-                    class(obj)))
-        }
     }
 }
 
@@ -472,7 +437,7 @@ tree.view <- function(x, compact='auto', show.data='auto', traverse.all=FALSE, l
         } else {
             my.names <- as.list(1:length(x))
             if(!is.null(names(x))){
-                my.names <- lapply(my.names, function(i) if(is.blank(names(x[i]))) i else names(x[i]))
+                my.names <- lapply(my.names, function(i) if(is.blank(names(x)[i])) i else names(x)[i])
             }
         }
     } else if(isS4(x)){
@@ -504,13 +469,54 @@ tree.view <- function(x, compact='auto', show.data='auto', traverse.all=FALSE, l
                     style.dim(": "),
                     sep="")
                 if(depth > 1){
-                    tree.view(objfun(x, my.names[[i]]), compact, show.data,
-                        traverse.all, lines-1, depth-1,
-                        indent + 2 + compact * nchar(my.names[[i]]))
+                        tree.view(objfun(x, my.names[[i]]), compact, show.data,
+                            traverse.all, lines-1, depth-1,
+                            indent + 2 + compact * nchar(my.names[[i]]))
                 } else {
                     cat(style.auto(NULL, "Max depth reached\n"))
                 }
             }
+        }
+    }
+}
+
+
+##' Display contents of a vector or list as line wrapped text
+##'
+##' @param x Vector or list to be displayed.
+##' @return Nothing
+##' @examples
+##' x <- rep(NA, 6)
+##' for(i in 1:6) x[i] <- paste(c("m", "a", "r", "u", "l", "k", " ")[1+floor(7*runif(100+floor(500*runif(1))))], collapse="")
+##' wrap.view(x)
+##' 
+##' x <- list(1:9, stuff=Sys.info(), today=date(), model=Outcome ~ Variables)
+##' wrap.view(x)
+##' @author Christofer \enc{Bäcklin}{Backlin}
+##' @export
+wrap.view <- function(x){
+    terminal.width <- if(is.blank(Sys.getenv("COLUMNS"))) 80L else as.integer(Sys.getenv("COLUMNS"))
+    indent <- 4
+    indent.str <- paste(rep(" ", indent), collapse="")
+    for(i in 1:length(x)){
+        printf("%s:\n", style(if(is.blank(names(x)[i])) i else names(x)[i], font.style="bold"))
+        obj <- objfun(x, i)
+        if(mode(obj) %in% c("numeric", "logical", "character", "factor")){
+            obj <- paste(as.character(obj), collapse=", ")
+            while(!is.blank(obj)){
+                obj <- sub("^\\s*", "", obj)
+                l <- regexpr(sprintf("^.{,%i}\\b", terminal.width-indent-1), obj)
+                l <- if(attr(l, "match.length") != -1) attr(l, "match.length") else terminal.width - 4
+                printf("%s%s\n", indent.str, substr(obj, 0, l))
+                obj <- substr(obj, l+1, nchar(obj))
+            }
+            printf("    %s\n", obj)
+        } else {
+            printf("%s%s\n\n", indent.str, style.auto(obj,
+                if(mode(obj) != class(obj)){
+                    sprintf("%s <%s>", mode(obj), class(obj))
+                } else
+                    class(obj)))
         }
     }
 }
