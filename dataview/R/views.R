@@ -156,11 +156,19 @@ entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL, browse=1){
             x <- as.list(df[i,])
         }
 
-        if(is.blank(names(x))) names(x) <- 1:length(x)
-        name_maxlength <- max(as.numeric(lapply(names(x), nchar)))
         terminal.width <- if(is.blank(Sys.getenv("COLUMNS"))) 80L else as.integer(Sys.getenv("COLUMNS"))
-        output.width <- terminal.width - 4 - name_maxlength
-        for(j in (if(sort.fields) order(names(x)) else 1:length(x))){
+        name.maxlength <- round(.6*terminal.width)
+        my.names <- if(is.blank(names(x))) as.character(1:length(x)) else names(x)
+        my.names <- sapply(my.names, function(n){
+            if(nchar(n) > name.maxlength){
+                sub(paste("^(.{0,", name.maxlength, "}).*$", sep=""), "\\1...", n)
+            } else {
+                n
+            }
+        })
+        name.maxlength <- max(sapply(my.names, nchar))
+        output.width <- terminal.width - 4 - name.maxlength
+        for(j in (if(sort.fields) order(my.names) else 1:length(x))){
             # objfun should be used here
             obj <- objfun(x, j)
             content.str <- if(mode(obj) %in% c("numeric", "logical", "character", "factor")){
@@ -179,8 +187,8 @@ entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL, browse=1){
                         class(obj)
                 }
             
-            cat(rep(" ", 2 + name_maxlength - nchar(names(x)[j])),
-                style.dim(sprintf("%s: ", names(x)[j])),
+            cat(rep(" ", 2 + name.maxlength - nchar(my.names[j])),
+                style.dim(sprintf("%s: ", my.names[j])),
                 style.auto(obj, content.str),
                 "\n", sep="")
         }
