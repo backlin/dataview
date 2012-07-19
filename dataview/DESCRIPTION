@@ -2,8 +2,8 @@ Encoding: UTF-8
 Package: dataview
 Type: Package
 Title: Human readable data presentation
-Version: 1.4-6
-Date: 2011-12-30
+Version: 1.4-7
+Date: 2012-07-19
 Author: Christofer Backlin
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
 Depends: xtermStyle

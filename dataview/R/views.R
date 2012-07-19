@@ -31,8 +31,7 @@
 ##' @export
 whos <- function(pattern="", envir=as.environment(-1), exclude=getOption("whos.mask")){
     # Check if the user specified a pattern, environment or both
-    if(missing(pattern)){ pattern <- ""
-    } else if(!is.character(pattern) && missing(envir)) {
+    if(!is.character(pattern) && missing(envir)) {
         envir <- pattern
         pattern <- ""
     }
@@ -40,9 +39,9 @@ whos <- function(pattern="", envir=as.environment(-1), exclude=getOption("whos.m
     if(is.environment(envir)){
         obj.name <- ls(envir=envir, pattern=pattern)
     } else if(isS4(envir)){
-        obj.name <- slotNames(envir)
+        obj.name <- grep(pattern, slotNames(envir), value=TRUE)
     } else {
-        obj.name <- if(!is.null(names(envir))) names(envir) else 1:length(envir)
+        obj.name <- grep(pattern, if(!is.null(names(envir))) names(envir) else 1:length(envir), value=TRUE)
     }
     obj.name <- obj.name[!obj.name %in% exclude]
     # Present objects
@@ -130,19 +129,13 @@ whos.all <- function(...){
 ##'   Optional, default: FALSE.
 ##' @param fmt \code{\link{sprintf}} type formatting string which will be
 ##'   applied to numbers, e.g. for specifying number of decimals or alignment.
-##' @param browse Logical or integer. If \code{TRUE} or \code{1} rows of a data
-##'   frame can be browsed stepwise. \emph{Experimental:} If \code{2} keyboard
-##'   input is caught on the fly instead of requiring the user to press
-##'   \code{enter}. \emph{The implementation is rather dirty and system
-##'   dependent.} It has only been tested on Ubuntu and can potentially mess up
-##'   the terminal.
 ##' @return Nothing.
 ##' @examples
 ##' entry.view(Sys.getenv())
 ##' entry.view(rnorm(20), fmt="\%5.2f")
 ##' @author Christofer \enc{Bäcklin}{Backlin}
 ##' @export
-entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL, browse=1){
+entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL){
     df.input <- class(x) == "data.frame"
     if(df.input) df <- x
     
@@ -192,7 +185,7 @@ entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL, browse=1){
                 style.auto(obj, content.str),
                 "\n", sep="")
         }
-        if(df.input && browse){
+        if(df.input){
             chars <- c(`85`="U", `117`="u", `100`="d", `68`="D", `103`="g")
             new.i <- i
             while(new.i == i){

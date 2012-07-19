@@ -3,8 +3,8 @@
 ##' \tabular{ll}{
 ##' Package: \tab dataview\cr
 ##' Type: \tab Package\cr
-##' Version: \tab 1.4-6\cr
-##' Date: \tab 2011-12-30\cr
+##' Version: \tab 1.4-7\cr
+##' Date: \tab 2012-07-19\cr
 ##' License: \tab GPL\cr
 ##' LazyLoad: \tab yes\cr
 ##' Depends: \tab xtermStyle\cr
