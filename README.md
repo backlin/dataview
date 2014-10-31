@@ -14,6 +14,7 @@ As it is a complete reimplementation of the `dataview` package, the installation
 It will soon take over as the official release and be published on CRAN, and `dataview` will be discontinued. 
 ```
 library(devtools)
+install_github("backlin/xtermStyle")
 install_github("backlin/dataview@develop")
 ```
 Then you typically also want to add these lines to the end of your `~/.Rprofile`
