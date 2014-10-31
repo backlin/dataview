@@ -1,34 +1,64 @@
-##' @import xtermStyle
-##' @include helpers.R
-{}
+print.ls_str <- function (x, max.level = 1, give.attr = FALSE, ...,
+                          digits = max(1, getOption("str")$digits.d)){
+    E <- attr(x, "envir")
+    stopifnot(is.environment(E))
+    M <- attr(x, "mode")
+    args <- list(...)
+    if (length(args) && "digits.d" %in% names(args)) {
+        if (missing(digits)) 
+            digits <- args$digits.d
+        else warning("'digits' and 'digits.d' are both specified and the latter is not used")
+        args$digits.d <- NULL
+    }
+    strargs <- c(list(max.level = max.level, give.attr = give.attr, 
+        digits = digits), args)
+    for (nam in x) {
+        cat(nam, ": ")
+        o <- tryCatch(get(nam, envir = E, mode = M), error = function(e) e)
+        if (inherits(o, "error")) {
+            cat(if (length(grep("missing|not found", o$message))) 
+                "<missing>"
+            else o$message, "\n", sep = "")
+        }
+        else {
+            strO <- function(...) str(o, ...)
+            do.call(strO, strargs, quote = is.call(o) || is.symbol(o))
+        }
+    }
+    invisible(x)
+}
+whos <- function(){
+    out <- print(ls
+print.ls_str
 
-##' Display contents of an evironment, data.frame or list as a summary table
-##'
-##' Color coded according to class and dimensions of contents. See
-##' \code{\link[xtermStyle]{style}} for details.
-##'
-##' @param pattern Regexp filtering of objects. Only objects matching the pattern
-##'   are displayed. Optional, default: show all objects.
-##' @param envir Environment, data frame or list to be displayed. Optional,
-##'   default: globalenv()
-##' @param exclude A list of objects not to be displayed. To set a default exclusion
-##'   mask use the \code{whos.set.mask} function. If \code{whos.set.mask} is
-##'   called without a list of object names all objects currently in globalenv()
-##'   are hidden. This is useful for example if you have a lot of stuff in the
-##'   workspace that you aren't currently interested in but is needed to make
-##'   your code run.
-##' @return Nothing
-##' @examples
-##' whos()
-##' data(USArrests)
-##' whos(USArrests)
-##' 
-##' whos.set.mask()
-##' data(iris)
-##' whos()
-##' whos.all()
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+
+#' Display contents of an evironment, data.frame or list as a summary table
+#'
+#' Color coded according to class and dimensions of contents. See
+#' \code{\link[xtermStyle]{style}} for details.
+#'
+#' @param pattern Regexp filtering of objects. Only objects matching the pattern
+#'   are displayed. Optional, default: show all objects.
+#' @param envir Environment, data frame or list to be displayed. Optional,
+#'   default: globalenv()
+#' @param exclude A list of objects not to be displayed. To set a default exclusion
+#'   mask use the \code{whos.set.mask} function. If \code{whos.set.mask} is
+#'   called without a list of object names all objects currently in globalenv()
+#'   are hidden. This is useful for example if you have a lot of stuff in the
+#'   workspace that you aren't currently interested in but is needed to make
+#'   your code run.
+#' @return Nothing
+#' @examples
+#' whos()
+#' data(USArrests)
+#' whos(USArrests)
+#' 
+#' whos.set.mask()
+#' data(iris)
+#' whos()
+#' whos.all()
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 whos <- function(pattern="", envir=as.environment(-1), exclude=getOption("whos.mask")){
     # Check if the user specified a pattern, environment or both
     if(!is.character(pattern) && missing(envir)) {
@@ -90,14 +120,14 @@ whos <- function(pattern="", envir=as.environment(-1), exclude=getOption("whos.m
     }
 }
 
-##' Set a default exclusion mask for \code{\link{whos}}.
-##'
-##' @param lst List of object names. These will be hidden from view. Defaults to
-##'   all objects in \code{envir}.
-##' @param envir Environment to work in.
-##' @return Nothing. The mask is stored as `whos.mask' in the global option list.
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+#' Set a default exclusion mask for \code{\link{whos}}.
+#'
+#' @param lst List of object names. These will be hidden from view. Defaults to
+#'   all objects in \code{envir}.
+#' @param envir Environment to work in.
+#' @return Nothing. The mask is stored as `whos.mask' in the global option list.
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 whos.set.mask <- function(lst, envir=globalenv()){
     # This function sets the default exclusion mask for the `whos' function.
     # It is stored as a list in the global options. When "whosing" objects fully
@@ -106,35 +136,35 @@ whos.set.mask <- function(lst, envir=globalenv()){
     else options(whos.mask = lst)
 }
 
-##' Shortcut for calling whos without exclusion.
-##'
-##' Shortcut for calling whos without exclusion.
-##'
-##' @param ... Parameters sent to \code{\link{whos}}.
-##' @return Nothing
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @rdname whos
-##' @export
+#' Shortcut for calling whos without exclusion.
+#'
+#' Shortcut for calling whos without exclusion.
+#'
+#' @param ... Parameters sent to \code{\link{whos}}.
+#' @return Nothing
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @rdname whos
+#' @export
 whos.all <- function(...){
     whos(..., exclude=NULL)
 }
 
-##' Display vectors, lists or rows of a data frames in key-value-pairs.
-##'
-##' Color coded according to class of contents.
-##'
-##' @param x List or data frame.
-##' @param i Row number to show. Press down/up to browse.
-##' @param sort.fields Display the elements in alphabetical order of the names.
-##'   Optional, default: FALSE.
-##' @param fmt \code{\link{sprintf}} type formatting string which will be
-##'   applied to numbers, e.g. for specifying number of decimals or alignment.
-##' @return Nothing.
-##' @examples
-##' entry.view(Sys.getenv())
-##' entry.view(rnorm(20), fmt="\%5.2f")
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+#' Display vectors, lists or rows of a data frames in key-value-pairs.
+#'
+#' Color coded according to class of contents.
+#'
+#' @param x List or data frame.
+#' @param i Row number to show. Press down/up to browse.
+#' @param sort.fields Display the elements in alphabetical order of the names.
+#'   Optional, default: FALSE.
+#' @param fmt \code{\link{sprintf}} type formatting string which will be
+#'   applied to numbers, e.g. for specifying number of decimals or alignment.
+#' @return Nothing.
+#' @examples
+#' entry.view(Sys.getenv())
+#' entry.view(rnorm(20), fmt="\%5.2f")
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL){
     df.input <- class(x) == "data.frame"
     if(df.input) df <- x
@@ -223,32 +253,32 @@ entry.view <- function(x, i=1, sort.fields=FALSE, fmt=NULL){
 }
 
 
-##' Display heatmaps and heatvectors.
-##'
-##' Quickly see the overall pattern of a variable in the terminal.
-##'
-##' @param x Vector to be displayed.
-##' @param pal Palette. Either the name of a palette defined in \code{\link[xtermStyle]{xterm.pal}}
-##'   or an integer vector with color indices (see \code{\link[xtermStyle]{display.xterm.colors}}).
-##' @param rng The numerical range which the palette describes. See \code{\link[xtermStyle]{discrete.color}}
-##'   for more info.
-##' @param width Length of each line. Optional.
-##' @return Nothing
-##' @examples
-##' data(iris)
-##' heat.view(iris$Species)
-##' heat.view(matrix(iris$Petal.Width, 3, 50, byrow=TRUE, dimnames=list(levels(iris$Species), NULL)), pal="purples")
-##'
-##' run.status <- factor(runif(100) < .95, labels=c("Fail", "Pass"))
-##' heat.view(run.status, pal=1:2)
-##'
-##' #Tip for displayig the element names of a named vector:
-##' a <- runif(7)
-##' names(a) <- c("ATM", "CHK1", "CDC25", "p53", "CDC2", "CDK2", "CDK4")
-##' heat.view(a)            # No names displayed
-##' heat.view(as.matrix(a)) # Names displayed
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+#' Display heatmaps and heatvectors.
+#'
+#' Quickly see the overall pattern of a variable in the terminal.
+#'
+#' @param x Vector to be displayed.
+#' @param pal Palette. Either the name of a palette defined in \code{\link[xtermStyle]{xterm.pal}}
+#'   or an integer vector with color indices (see \code{\link[xtermStyle]{display.xterm.colors}}).
+#' @param rng The numerical range which the palette describes. See \code{\link[xtermStyle]{discrete.color}}
+#'   for more info.
+#' @param width Length of each line. Optional.
+#' @return Nothing
+#' @examples
+#' data(iris)
+#' heat.view(iris$Species)
+#' heat.view(matrix(iris$Petal.Width, 3, 50, byrow=TRUE, dimnames=list(levels(iris$Species), NULL)), pal="purples")
+#'
+#' run.status <- factor(runif(100) < .95, labels=c("Fail", "Pass"))
+#' heat.view(run.status, pal=1:2)
+#'
+#' #Tip for displayig the element names of a named vector:
+#' a <- runif(7)
+#' names(a) <- c("ATM", "CHK1", "CDC25", "p53", "CDC2", "CDK2", "CDK4")
+#' heat.view(a)            # No names displayed
+#' heat.view(as.matrix(a)) # Names displayed
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 heat.view <- function(x, pal, rng, width){
     if(is.data.frame(x)){
         x <- sapply(x, function(x){
@@ -379,36 +409,36 @@ heat.view <- function(x, pal, rng, width){
 }
 
 
-##' Display contents of a list of lists in a summarized tree structure.
-##'
-##' @param x List to be displayed.
-##' @param compact Wheter to display the list tree in compact mode. Optional,
-##'   default: 'auto' i.e. adapt to terminal height.
-##' @param show.data Whether to show the contents of the list elements or just
-##'   the structure. Optional, default: 'auto' i.e. adapt to terminal width.
-##' @param traverse.all Whether to treat objects of custom classes as lists or
-##'   not traverse them (except if they are the root of the tree).
-##' @param lines Maximum number of lines to show.
-##' @param depth Maximum number of levels to show.
-##' @param indent Internal.
-##' @return Nothing
-##' @examples
-##' # Create a tree structure of lists
-##' make.list.tree <- function(boost=2) {
-##'     n.children <- round(boost + rexp(1))
-##'     if(n.children < 1){
-##'         return(rep("data", 1+floor(5*runif(1))))
-##'     } else {
-##'         ll <- vector("list", n.children)
-##'         names(ll) <- paste("node", 1:n.children)
-##'         return(lapply(ll, function(x) make.list.tree(boost-1)))
-##'     }
-##' }
-##'
-##' # Visualize it!
-##' tree.view(make.list.tree())
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+#' Display contents of a list of lists in a summarized tree structure.
+#'
+#' @param x List to be displayed.
+#' @param compact Wheter to display the list tree in compact mode. Optional,
+#'   default: 'auto' i.e. adapt to terminal height.
+#' @param show.data Whether to show the contents of the list elements or just
+#'   the structure. Optional, default: 'auto' i.e. adapt to terminal width.
+#' @param traverse.all Whether to treat objects of custom classes as lists or
+#'   not traverse them (except if they are the root of the tree).
+#' @param lines Maximum number of lines to show.
+#' @param depth Maximum number of levels to show.
+#' @param indent Internal.
+#' @return Nothing
+#' @examples
+#' # Create a tree structure of lists
+#' make.list.tree <- function(boost=2) {
+#'     n.children <- round(boost + rexp(1))
+#'     if(n.children < 1){
+#'         return(rep("data", 1+floor(5*runif(1))))
+#'     } else {
+#'         ll <- vector("list", n.children)
+#'         names(ll) <- paste("node", 1:n.children)
+#'         return(lapply(ll, function(x) make.list.tree(boost-1)))
+#'     }
+#' }
+#'
+#' # Visualize it!
+#' tree.view(make.list.tree())
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 tree.view <- function(x, compact='auto', show.data='auto', traverse.all=FALSE, lines=Inf, depth=Inf, indent=0){
     if(lines <= 0){
         cat(style.dim("Line limit reached\n"))
@@ -482,19 +512,19 @@ tree.view <- function(x, compact='auto', show.data='auto', traverse.all=FALSE, l
 }
 
 
-##' Display contents of a vector or list as line wrapped text
-##'
-##' @param x Vector or list to be displayed.
-##' @return Nothing
-##' @examples
-##' x <- rep(NA, 6)
-##' for(i in 1:6) x[i] <- paste(c("m", "a", "r", "u", "l", "k", " ")[1+floor(7*runif(100+floor(500*runif(1))))], collapse="")
-##' wrap.view(x)
-##' 
-##' x <- list(1:9, stuff=Sys.info(), today=date(), model=Outcome ~ Variables)
-##' wrap.view(x)
-##' @author Christofer \enc{Bäcklin}{Backlin}
-##' @export
+#' Display contents of a vector or list as line wrapped text
+#'
+#' @param x Vector or list to be displayed.
+#' @return Nothing
+#' @examples
+#' x <- rep(NA, 6)
+#' for(i in 1:6) x[i] <- paste(c("m", "a", "r", "u", "l", "k", " ")[1+floor(7*runif(100+floor(500*runif(1))))], collapse="")
+#' wrap.view(x)
+#' 
+#' x <- list(1:9, stuff=Sys.info(), today=date(), model=Outcome ~ Variables)
+#' wrap.view(x)
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
 wrap.view <- function(x){
     terminal.width <- if(is.blank(Sys.getenv("COLUMNS"))) 80L else as.integer(Sys.getenv("COLUMNS"))
     indent <- 4
