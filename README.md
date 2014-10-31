@@ -19,9 +19,9 @@ install_github("backlin/dataview@develop")
 Then you typically also want to add these lines to the end of your `~/.Rprofile`
 ```
 require(synesthesia)
-set.whos.mask(ls())
+whos.set.mask()
 ```
 and perhaps also
 ```
-print.factor <- heat.view
+print.factor <- heat.view # Not yet implemented, but coming soon!
 ```
