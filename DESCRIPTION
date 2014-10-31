@@ -6,10 +6,12 @@ Version: 1.0-0
 Date: 2014-10-31
 Author: Christofer Backlin
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
-Depends: xtermStyle
+Imports:
+    data.table,
+    xtermStyle (>= 3.0-0)
 Description: This package provides clear, informative and colorful ways of
-  presenting the contents of the workspace, objects, and environment in terminal windows.
-  Ideally this package should be used in terminals supporting xterm 256 colour
-  mode, e.g. the standard Ubuntu terminal.
+    presenting the contents of the workspace, objects, and environment in
+    terminal windows. Ideally this package should be used in terminals
+    supporting xterm 256 colour mode, e.g. the standard Ubuntu terminal.
 License: GPL (>=2)
 LazyLoad: yes
