@@ -17,12 +17,12 @@ library(devtools)
 install_github("backlin/xtermStyle")
 install_github("backlin/dataview@develop")
 ```
-Then you typically also want to add these lines to the end of your `~/.Rprofile`
+Then you typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
 ```
 require(synesthesia)
-whos.set.mask()
+whos.options(exclude=ls())
 ```
 and perhaps also
 ```
-print.factor <- heat.view # Not yet implemented, but coming soon!
+print.factor <- heat.view
 ```

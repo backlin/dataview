@@ -41,7 +41,6 @@ whos()
 data(USArrests)
 whos(USArrests)
 
-whos.set.mask()
 data(iris)
 whos()
 whos.all()
@@ -50,5 +49,8 @@ whos.all()
 Christofer \enc{Bäcklin}{Backlin}
 
 Christofer \enc{Bäcklin}{Backlin}
+}
+\seealso{
+whos.options
 }
 

@@ -19,19 +19,19 @@
 #' data(USArrests)
 #' whos(USArrests)
 #' 
-#' whos.set.mask()
 #' data(iris)
 #' whos()
 #' whos.all()
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @import data.table
 #' @import xtermStyle
+#' @seealso whos.options
 #' @export
 whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.exclude")){
     # Interpret the `envir` argument if not already an environment
     envir <- switch(class(envir)[1],
         `character` = {
-            include <- envir
+            pattern <- envir
             parent.frame()
         },
         `function` = environment(envir),
@@ -70,7 +70,6 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
         }
         obj.lapply <- function(...) obj.sapply(..., simplify=FALSE)
 
-        b <- obj.sapply(object.size)
         structure(data.table(
             name = if(is.character(obj.name)) obj.name else NA,
             class = {
@@ -83,15 +82,22 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
             S4 = obj.sapply(isS4),
             table.key = if(haskey(envir)) names(envir) %in% key(envir) else FALSE,
             dim = obj.sapply(function(x){
-                x <- list(length = length(x), dim = dim(x))
-                if(is.null(x$dim)){
-                    as.character(x$length)
+                if(is.function(x)){
+                    ""
                 } else {
-                    paste(x$dim, collapse="x")
+                    x <- list(length = length(x), dim = dim(x))
+                    if(is.null(x$dim)){
+                        as.character(x$length)
+                    } else {
+                        paste(x$dim, collapse="x")
+                    }
                 }
             }),
-            size = 2^(log2(b) %% 10),
-            unit = c("B", "KiB", "MiB", "GiB", "TiB", "EiB")[sapply(b, function(x) sum(x > 1024^(0:4)))],
+            bytes = obj.sapply(if(getOption("whos.report.S4.size", TRUE)){
+                function(x) if(isS4(x)) NA else object.size(x)
+            } else {
+                object.size
+            }),
             comment = obj.sapply(function(x) !is.null(comment(x))),
             style = obj.sapply(style.auto)
         ), class=c("whos", "data.table", "data.frame"))
@@ -104,6 +110,9 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
 print.whos <- function(x, ...){
     # Determine how many characters each column occupies i.e. length of longest entry in each column
     space <- 2
+    size <- 2^(log2(x$bytes) %% 10)
+    unit <- c("B", "KiB", "MiB", "GiB", "TiB", "EiB")[
+        sapply(x$bytes, function(b) sum(b > 1024^(0:4)))]
     nc <- x[, list(
         index = nchar(nrow(x)) + 1 + space,
         name = if(all(is.na(name))) 0 else max(nchar(name)) + space,
@@ -116,35 +125,45 @@ print.whos <- function(x, ...){
         comment = if(any(comment)) 2 + space
     )]
     sfun <- function(str, width) sprintf(sprintf("%%-%is", width), str)
-    cat(x[,paste0(
-        sprintf(sprintf("%%%is:", nc$index - 1 - space), seq_len(nrow(x))),
-        sprintf(sprintf("%s%%%is", x$style, space), ""),
-        if(all(is.na(name))) NULL else sfun(name, nc$name),
-        sfun(ifelse(table.key, "[key]", ""), nc$table.key),
-        sfun(class, nc$class),
-        sfun(ifelse(S4, "[S4]", ""), nc$S4),
-        sfun(dim, nc$dim),
-        sprintf("%5.4g ", size),
-        sfun(unit, nc$unit),
-        sfun(ifelse(comment, "+!", ""), nc$comment),
-        style.clear()
-    )], sep="\n")
+    tryCatch({
+        cat(x[,paste0(
+            sprintf(sprintf("%%%is:", nc$index - 1 - space), seq_len(nrow(x))),
+            sprintf(sprintf("%s%%%is", x$style, space), ""),
+            if(all(is.na(name))) NULL else sfun(name, nc$name),
+            sfun(ifelse(table.key, "[key]", ""), nc$table.key),
+            sfun(class, nc$class),
+            sfun(ifelse(S4, "[S4]", ""), nc$S4),
+            sfun(dim, nc$dim),
+            sprintf("%5.4g ", size),
+            sfun(unit, nc$unit),
+            sfun(ifelse(comment, "+!", ""), nc$comment),
+            style.clear()
+        )], sep="\n")
+    }, interrupt = {
+        cat(style.clear())
+    })
 }
 
-#' Set a default exclusion mask for \code{\link{whos}}.
+#' Set default behavior of the whos function
 #'
-#' @param exclude List of object names. These will be hidden from view.
-#'   Defaults to all objects in \code{envir}.
-#' @param envir Environment to work in.
-#' @return Nothing. The mask is stored as `whos.exclude' in the global option list.
+#' @param exclude Objects to exclude from view. Can be a character vector of
+#'   names, or an environment, but not any regular expressions so far.
+#' @param report.S4.size Calculating the size of S4 objects with
+#'   \code{\link{object.size}} can take an annoyingly long time (seconds), set
+#'   this option to \code{FALSE} to skip it and get quicker execution.
+#' @return Nothing. The values are stored as global options.
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @export
-whos.set.mask <- function(exclude, envir=globalenv()){
-    # This function sets the default exclusion mask for the `whos' function.
-    # It is stored as a list in the global options. When "whosing" objects fully
-    # matching an entry in the mask will be omitted from the output.
-    if(missing(exclude)) options(whos.exclude = ls(envir=envir))
-    else options(whos.exclude = exclude)
+whos.options <- function(exclude, report.S4.size){
+    if(!missing(exclude)){
+        options(whos.exclude = switch(class(exclude),
+            `character` = exclude,
+            `environment` = ls(exclude),
+            `integer` = ls(as.environment(exclude))
+        ))
+    }
+    if(!missing(report.S4.size))
+        options(whos.report.S4.size = report.S4.size)
 }
 
 #' Shortcut for calling whos without exclusion.
