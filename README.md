@@ -20,9 +20,18 @@ install_github("backlin/dataview@develop")
 Then you typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
 ```
 require(synesthesia)
-whos.options(exclude=ls())
+whos.exclude(ls())
 ```
 and perhaps also
 ```
 print.factor <- heat.view
 ```
+
+Colors
+------
+The color schemes used by Synesthesia is defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
+```
+require(xtermStyle)
+style.palette("light") # Designed for dark terminal background
+```
+`style.palette` also let's you define your own palette if you are not happy with the pre-defined ones.

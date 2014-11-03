@@ -55,10 +55,8 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
     if(is.character(obj.name))
         obj.name <- setdiff(grep(pattern, obj.name, value=TRUE), exclude)
 
-    # Present objects
-    n <- length(obj.name)
-    if(n == 0){
-        cat("No objects found\n")
+    if(length(obj.name) == 0){
+        NULL
     } else {
         # Make an object/property matrix (objects as rows, properties as columns)
         obj.sapply <- if(isS4(envir)){
@@ -113,7 +111,7 @@ print.whos <- function(x, ...){
     size <- 2^(log2(x$bytes) %% 10)
     unit <- c("B", "KiB", "MiB", "GiB", "TiB", "EiB")[
         sapply(x$bytes, function(b) sum(b > 1024^(0:4)))]
-    nc <- x[, list(
+    nc <- as.data.table(x)[, list(
         index = nchar(nrow(x)) + 1 + space,
         name = if(all(is.na(name))) 0 else max(nchar(name)) + space,
         table.key = if(any(table.key)) 5 + space else 0,
@@ -126,7 +124,7 @@ print.whos <- function(x, ...){
     )]
     sfun <- function(str, width) sprintf(sprintf("%%-%is", width), str)
     tryCatch({
-        cat(x[,paste0(
+        cat(as.data.table(x)[,paste0(
             sprintf(sprintf("%%%is:", nc$index - 1 - space), seq_len(nrow(x))),
             sprintf(sprintf("%s%%%is", x$style, space), ""),
             if(all(is.na(name))) NULL else sfun(name, nc$name),
@@ -142,6 +140,13 @@ print.whos <- function(x, ...){
     }, interrupt = {
         cat(style.clear())
     })
+}
+#' @param x \code{\link{whos}} object.
+#' @param ... Sent to 
+#' @noRd
+#' @export
+`[.whos` <- function(x, ...){
+    structure(as.data.table(x)[...], class=class(x))
 }
 
 #' Set default behavior of the whos function
@@ -166,6 +171,24 @@ whos.options <- function(exclude, report.S4.size){
         options(whos.report.S4.size = report.S4.size)
 }
 
+#' @param x A character vector of object names to exclude or include.
+#' @param pattern \link[=regex]{Regular expression pattern} to match object
+#'   names against, e.g. \code{pattern="^my\\..*"} will exclude or include
+#'   \code{"my.vector"} and \code{"my.matrix"} but not \code{"mysql.con"}.
+#' @param envir Environment to search in.
+#' @rdname whos.options
+#' @export
+whos.exclude <- function(x=NULL, pattern, envir=parent.frame()){
+    if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
+    options(whos.exclude = union(getOption("whos.exclude"), x))
+}
+#' @rdname whos.options
+#' @export
+whos.include <- function(x=NULL, pattern, envir=parent.frame()){
+    if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
+    options(whos.exclude = setdiff(getOption("whos.exclude"), x))
+}
+
 #' Shortcut for calling whos without exclusion.
 #'
 #' @param ... Parameters sent to \code{\link{whos}}.
@@ -185,6 +208,7 @@ as.data.table.whos <- function(x, keep.rownames=FALSE){
     class(x) <- setdiff(class(x), "whos")
     x
 }
+
 #' @param x \code{\link{whos}} object.
 #' @param optional Ignored, kept for S3 consistency.
 #' @param row.names Ignored, kept for S3 consistency.
@@ -194,5 +218,30 @@ as.data.table.whos <- function(x, keep.rownames=FALSE){
 as.data.frame.whos <- function(x, row.names=NULL, optional=FALSE, ...){
     class(x) <- setdiff(class(x), c("whos", "data.table"))
     x
+}
+
+#' Convert objects to whos
+#'
+#' @param x Object of type \code{\link{data.table}} or \code{\link{data.frame}}.
+#' @examples
+#' an.object <- "Containing all my stuff"
+#' w <- as.data.frame(whos())
+#' as.whos(w)
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @export
+as.whos <- function(x){
+    UseMethod("as.whos")
+}
+#' @rdname as.whos
+#' @export
+as.whos.data.table <- function(x){
+    class(x) <- c("whos", class(x))
+    x
+}
+#' @rdname as.whos
+#' @export
+as.whos.data.frame <- function(x){
+    x <- as.data.table(x)
+    as.whos(x)
 }
 

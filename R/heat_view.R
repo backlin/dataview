@@ -39,7 +39,8 @@ heat.view <- function(x, pal, range, mark=NULL){
     nc <- nchar(n)
     row.length <- floor((terminal.width - nc - 2)/10)*10
     if(is.null(mark))
-        mark <- rep(" ", n)
+        mark <- ifelse(is.na(x), "-", " ")
+    mark <- substr(paste0(mark, " "), 1, 1)
 
     switch(class(x),
         `logical` = {
@@ -76,7 +77,7 @@ heat.view <- function(x, pal, range, mark=NULL){
     cat(sep="\n",
         sprintf("%s: %s%s",
             sprintf(sprintf("%%%ii", nc), 1 + (seq_along(x)-1)*row.length),
-            mapply(function(x, m) paste0(mapply(style, bg=pal[x]), m, collapse=""), x, mark),
+            mapply(function(x, m) paste(mapply(style, m, bg=pal[x]), collapse=""), x, mark),
             style.clear()
         )
     )
