@@ -51,6 +51,6 @@ Christofer \enc{Bäcklin}{Backlin}
 Christofer \enc{Bäcklin}{Backlin}
 }
 \seealso{
-whos.options
+whos.options, browse
 }
 

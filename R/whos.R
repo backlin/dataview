@@ -25,7 +25,7 @@
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @import data.table
 #' @import xtermStyle
-#' @seealso whos.options
+#' @seealso whos.options, browse
 #' @export
 whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.exclude")){
     # Interpret the `envir` argument if not already an environment
@@ -114,13 +114,13 @@ print.whos <- function(x, ...){
     nc <- as.data.table(x)[, list(
         index = nchar(nrow(x)) + 1 + space,
         name = if(all(is.na(name))) 0 else max(nchar(name)) + space,
-        table.key = if(any(table.key)) 5 + space else 0,
+        table.key = if(any(table.key) %in% TRUE) 5 + space else 0,  # The %in% is a hack to get around any() --> NA
         class = max(nchar(class)) + space,
-        S4 = if(any(S4)) 4 + space else 0,
+        S4 = if(any(S4) %in% TRUE) 4 + space else 0,
         dim = max(nchar(dim)) + space,
         size = 6,
         unit = max(nchar(unit)) + space,
-        comment = if(any(comment)) 2 + space
+        comment = if(any(comment) %in% TRUE) 2 + space
     )]
     sfun <- function(str, width) sprintf(sprintf("%%-%is", width), str)
     tryCatch({
