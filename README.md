@@ -8,7 +8,7 @@ It centers around the functions `whos` inspired by the same function in MATLAB,
 `entry.view` inspired by data base systems,
 and `heat.view` that can visualize long vectors in a very compact manner (especially factors).
 
-Installation & Usage
+Installation
 ------------
 As it is a complete reimplementation of the `dataview` package, the installation procedure is a bit dirty at the moment.
 It will soon take over as the official release and be published on CRAN, and `dataview` will be discontinued. 
@@ -26,6 +26,12 @@ and perhaps also
 ```
 print.factor <- heat.view
 ```
+
+Usage & Functionality
+---------------------
+This is what it does:
+
+![Synesthesia demo](https://raw.githubusercontent.com/backlin/dataview/images/images/synesthesia.png)
 
 Colors
 ------
