@@ -108,9 +108,9 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
 print.whos <- function(x, ...){
     # Determine how many characters each column occupies i.e. length of longest entry in each column
     space <- 2
-    size <- 2^(log2(x$bytes) %% 10)
-    unit <- c("B", "KiB", "MiB", "GiB", "TiB", "EiB")[
-        sapply(x$bytes, function(b) sum(b > 1024^(0:4)))]
+    size <- ifelse(x$bytes == 0, 0, 2^(log2(x$bytes) %% 10))
+    unit <- c("B", "B", "KiB", "MiB", "GiB", "TiB", "EiB")[
+        1+sapply(x$bytes, function(b) sum(b > 1024^(0:4)))]
     nc <- as.data.table(x)[, list(
         index = nchar(nrow(x)) + 1 + space,
         name = if(all(is.na(name))) 0 else max(nchar(name)) + space,
@@ -120,7 +120,7 @@ print.whos <- function(x, ...){
         dim = max(nchar(dim)) + space,
         size = 6,
         unit = max(nchar(unit)) + space,
-        comment = if(any(comment) %in% TRUE) 2 + space
+        comment = if(any(comment) %in% TRUE) 2 + space else 0
     )]
     sfun <- function(str, width) sprintf(sprintf("%%-%is", width), str)
     tryCatch({
@@ -141,6 +141,11 @@ print.whos <- function(x, ...){
         cat(style.clear())
     })
 }
+#' Subset a whos object
+#'
+#' This is exactly the same as the subsetting function of data.table, but
+#' preserves the class, to make it find the right print function.
+#'
 #' @param x \code{\link{whos}} object.
 #' @param ... Sent to 
 #' @noRd

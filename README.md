@@ -33,6 +33,8 @@ This is what it does:
 
 ![Synesthesia demo](https://raw.githubusercontent.com/backlin/dataview/images/images/synesthesia.png)
 
+If you find yourself calling `whos` often, you probably want to check out the `browse` function too.
+
 Colors
 ------
 The color schemes used by Synesthesia is defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
