@@ -3,7 +3,7 @@
 \alias{browse}
 \title{Browse the contents of a nested data structure}
 \usage{
-browse(x, name)
+browse(x = .GlobalEnv, name)
 }
 \arguments{
 \item{x}{Object.}

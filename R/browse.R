@@ -18,7 +18,7 @@
 #' @seealso whos
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @export
-browse <- function(x=globalenv(), name){
+browse <- function(x=.GlobalEnv, name){
     if(missing(name)) name <- deparse(substitute(x))
     elem <- NA
     w <- whos(x)
@@ -29,68 +29,71 @@ browse <- function(x=globalenv(), name){
         structure(as.data.table(x)[...], class=class(x))
     }
 
-    tryCatch({
+    if(!identical(x, .GlobalEnv)){
         attach(x) # To get tab completion
-        while(is.na(elem) || elem != ""){
-            cat("\nBrowsing ", name, "\n", sep="")
-            print(w)
-            elem <- readline("Select an element to inspect: ")
-            if(elem != ""){
-                if(grepl("^\\d+$", elem) && !elem %in% w$name){
-                    i <- as.integer(elem)
-                    if(is.na(w$name[i])){
-                        elem <- if(i > nrow(w)) NA else i
-                    } else {
-                        elem <- w$name[i]
-                    }
-                } else {
-                    if(!elem %in% w$name){
-                        i <- grep(sprintf("^%s", elem), w$name)
-                        while(length(i) > 1){
-                            cat("\n")
-                            print(w[i])
-                            elem <- readline("Please specify: ")
-                            if(grepl("^\\d+$", elem) && !elem %in% w$name[i]){
-                                i <- i[as.integer(elem)]
-                            } else {
-                                i <- grep(sprintf("^%s", elem), w$name)
-                            }
-                        }
-                        elem <- if(is.na(i) || length(i) == 0) NA else w$name[i]
-                    }
-                }
-                if(is.na(elem)){
-                    cat("No matches, please try again. Enter blank or press ctrl+c to exit.\n")
-                } else {
-                    if(isS4(x)){
-                        obj <- slot(x, elem)
-                        obj.name <- sprintf("%s@%s", name, elem)
-                    } else {
-                        if(is.integer(elem)){
-                            obj <- x[[elem]]
-                            obj.name <- sprintf("%s[[%i]]", name, elem)
-                        } else {
-                            obj <- get(elem, x)
-                            obj.name <- sprintf("%s$%s", name,
-                                if(elem == make.names(elem)) elem else sprintf("`%s`", elem))
-                        }
-                    }
-                    if(is.function(obj))
-                        obj.name <- sprintf("environment(%s)", obj.name)
-                    tryCatch({
-                        suppressWarnings(browse(obj, obj.name))
-                    }, error = function(...){
-                        tryCatch({
-                            h <- head(obj)
-                            cat("Head of", obj.name, "\n")
-                            print(h)
-                        }, error = function(...){
-                            cat("Could not inspect object.\n")
-                        })
-                    })
+        on.exit(detach(x))
+    }
 
+    while(is.na(elem) || elem != ""){
+        cat("\nBrowsing ", name, "\n", sep="")
+        print(w)
+        elem <- readline("Select an element to inspect: ")
+        if(elem != ""){
+            if(grepl("^\\d+$", elem) && !elem %in% w$name){
+                i <- as.integer(elem)
+                if(is.na(w$name[i])){
+                    elem <- if(i > nrow(w)) NA else i
+                } else {
+                    elem <- w$name[i]
+                }
+            } else {
+                if(!elem %in% w$name){
+                    i <- grep(sprintf("^%s", elem), w$name)
+                    while(length(i) > 1){
+                        cat("\n")
+                        print(w[i])
+                        elem <- readline("Please specify: ")
+                        if(grepl("^\\d+$", elem) && !elem %in% w$name[i]){
+                            i <- i[as.integer(elem)]
+                        } else {
+                            i <- grep(sprintf("^%s", elem), w$name)
+                        }
+                    }
+                    elem <- if(is.na(i) || length(i) == 0) NA else w$name[i]
                 }
             }
+            if(is.na(elem)){
+                cat("No matches, please try again. Enter blank or press ctrl+c to exit.\n")
+            } else {
+                if(isS4(x)){
+                    obj <- slot(x, elem)
+                    obj.name <- sprintf("%s@%s", name, elem)
+                } else {
+                    if(is.integer(elem)){
+                        obj <- x[[elem]]
+                        obj.name <- sprintf("%s[[%i]]", name, elem)
+                    } else {
+                        obj <- get(elem, x)
+                        obj.name <- sprintf("%s$%s", name,
+                            if(elem == make.names(elem)) elem else sprintf("`%s`", elem))
+                    }
+                }
+                if(is.function(obj)){
+                    obj <- environment(obj)
+                    obj.name <- sprintf("environment(%s)", obj.name)
+                }
+                tryCatch({
+                    suppressWarnings(browse(obj, obj.name))
+                }, error = function(...){
+                    tryCatch({
+                        h <- head(obj)
+                        cat("Head of", obj.name, "\n")
+                        print(h)
+                    }, error = function(...){
+                        cat("Could not inspect object.\n")
+                    })
+                })
+            }
         }
-    }, finally = detach(x))
+    }
 }
