@@ -4,8 +4,7 @@
 \alias{whos.all}
 \title{Display contents of an evironment, data.frame or list as a summary table}
 \usage{
-whos(envir = parent.frame(), pattern = ".",
-  exclude = getOption("whos.exclude"))
+whos(envir = parent.frame(), pattern = ".", exclude = getOpt("exclude"))
 
 whos.all(...)
 }

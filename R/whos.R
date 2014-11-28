@@ -1,3 +1,12 @@
+#' Replace null values
+#' 
+#' @param x Value to be tested.
+#' @param replacement Value to use if \code{x} is \code{NULL}.
+#' @return \code{x} or \code{replacement} in case \code{x} is \code{NULL}.
+#' @author Christofer \enc{Bäcklin}{Backlin}
+#' @noRd
+ifnull <- function(x, replacement=NA) if(is.null(x)) replacement else x
+
 #' Display contents of an evironment, data.frame or list as a summary table
 #'
 #' Color coded according to class and dimensions of contents. See
@@ -27,7 +36,7 @@
 #' @import xtermStyle
 #' @seealso whos.options, browse
 #' @export
-whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.exclude")){
+whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
     # Interpret the `envir` argument if not already an environment
     envir <- switch(class(envir)[1],
         `character` = {
@@ -44,61 +53,42 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
     )
     
     # Get names of objects in environment matching pattern
-    obj.name <- if(is.environment(envir)){
-        ls(envir=envir)
+    accessors <- if(is.environment(envir)){
+        structure(ls(envir=envir), names=ls(envir=envir))
     } else if(isS4(envir)){
-        slotNames(envir)
+        structure(slotNames(envir), names=slotNames(envir))
     } else {
         # lists, data.frames, data.tables etc
-        if(!is.null(names(envir))) names(envir) else 1:length(envir)
+        if(!is.null(names(envir))){
+            structure(seq_len(length(envir)), names=names(envir))
+        } else {
+            1:length(envir)
+        }
     }
-    if(is.character(obj.name))
-        obj.name <- setdiff(grep(pattern, obj.name, value=TRUE), exclude)
 
-    if(length(obj.name) == 0){
+    if(length(accessors) == 0){
         NULL
     } else {
         # Make an object/property matrix (objects as rows, properties as columns)
         obj.sapply <- if(isS4(envir)){
-            function(fun, ...) sapply(obj.name, function(x) fun(slot(envir, x)), ...)
-        } else if(is.character(obj.name)){
-            function(fun, ...) sapply(obj.name, function(x) fun(get(x, envir)), ...)
+            function(fun, ...) sapply(accessors, function(x) ifnull(fun(slot(envir, x))), ...)
+        } else if(is.character(accessors)){
+            # Unordered set of objects, as found in an environment
+            function(fun, ...) sapply(accessors, function(x) ifnull(fun(get(x, envir))), ...)
         } else {
-            function(fun, ...) sapply(envir, fun, ...)
+            # Ordered set of objects, as found in a data frame
+            # Use the index numbers rather than names in case of duplicates
+            function(fun, ...) sapply(envir, function(x, ...) ifnull(fun(x, ...)), ...)
         }
-        obj.lapply <- function(...) obj.sapply(..., simplify=FALSE)
 
-        structure(data.table(
-            name = if(is.character(obj.name)) obj.name else NA,
-            class = {
-                cls <- obj.lapply(class)
-                paste0(sapply(cls, "[", 1),
-                       ifelse(sapply(cls, length) > 1,
-                              sprintf(" (+%i)", sapply(cls, length)-1),
-                              ""))
-            },
-            S4 = obj.sapply(isS4),
-            table.key = if(haskey(envir)) names(envir) %in% key(envir) else FALSE,
-            dim = obj.sapply(function(x){
-                if(is.function(x)){
-                    ""
-                } else {
-                    x <- list(length = length(x), dim = dim(x))
-                    if(is.null(x$dim)){
-                        as.character(x$length)
-                    } else {
-                        paste(x$dim, collapse="x")
-                    }
-                }
-            }),
-            bytes = obj.sapply(if(getOption("whos.report.S4.size", TRUE)){
-                function(x) if(isS4(x)) NA else object.size(x)
-            } else {
-                object.size
-            }),
-            comment = obj.sapply(function(x) !is.null(comment(x))),
-            style = obj.sapply(style.auto)
-        ), class=c("whos", "data.table", "data.frame"))
+        structure(do.call(data.table, c(
+            list(
+                excluded = if(is.null(names(accessors))) FALSE else names(accessors) %in% exclude,
+                style = obj.sapply(style.auto),
+                name = if(!is.null(names(accessors))) names(accessors) else NA
+            ),
+            lapply(getOpt("columns"), obj.sapply)
+        )), class=c("whos", "data.table", "data.frame"))
     }
 }
 
@@ -106,40 +96,51 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOption("whos.excl
 #' @noRd
 #' @export
 print.whos <- function(x, ...){
-    # Determine how many characters each column occupies i.e. length of longest entry in each column
-    space <- 2
-    size <- ifelse(x$bytes == 0, 0, 2^(log2(x$bytes) %% 10))
-    unit <- c("B", "B", "KiB", "MiB", "GiB", "TiB", "EiB")[
-        1+sapply(x$bytes, function(b) sum(b > 1024^(0:4)))]
-    nc <- as.data.table(x)[, list(
-        index = nchar(nrow(x)) + 1 + space,
-        name = if(all(is.na(name))) 0 else max(nchar(name)) + space,
-        table.key = if(any(table.key) %in% TRUE) 5 + space else 0,  # The %in% is a hack to get around any() --> NA
-        class = max(nchar(class)) + space,
-        S4 = if(any(S4) %in% TRUE) 4 + space else 0,
-        dim = max(nchar(dim)) + space,
-        size = 6,
-        unit = max(nchar(unit)) + space,
-        comment = if(any(comment) %in% TRUE) 2 + space else 0
-    )]
-    sfun <- function(str, width) sprintf(sprintf("%%-%is", width), str)
+    # Remove columns without content
+    excluded <- x$excluded
+    x$excluded <- NULL
+    x <- x[, !sapply(x, function(x) all(x %in% c(FALSE, NA))), with=FALSE]
+
+    # Calculate summaries
+    xnames <- names(x)
+    xsum <- mapply(function(field, values){
+        fun <- ifnull(getOpt("summary")[[field]], function(...) NA)
+        val2str <- ifnull(getOpt("print")[[field]],
+                          function(x) if(is.na(x)) "" else x)
+        val2str(fun(values))
+    }, names(x), x)
+
+    # Convert all to characters
+    x <- mapply(function(field, values){
+        val2str <- ifnull(getOpt("print")[[field]], as.character)
+        if(is.logical(values)){
+            ifelse(is.na(values), "", ifelse(values, sprintf("[%s]", field), ""))
+        } else ifelse(is.na(values), "", val2str(values))
+    }, names(x), x)
+
+    nc <- pmax(nchar(xnames), apply(x, 2, function(x) max(nchar(x))))[-1]
+    align <- ifelse(getOpt("align")[xnames[-1]] %in% "right", "", "-")
+    fmt <- paste("%s ", paste(sprintf("%%%s%is", align, nc), collapse="  "), " ", style.clear(), "\n", sep="")
     tryCatch({
-        cat(as.data.table(x)[,paste0(
-            sprintf(sprintf("%%%is:", nc$index - 1 - space), seq_len(nrow(x))),
-            sprintf(sprintf("%s%%%is", x$style, space), ""),
-            if(all(is.na(name))) NULL else sfun(name, nc$name),
-            sfun(ifelse(table.key, "[key]", ""), nc$table.key),
-            sfun(class, nc$class),
-            sfun(ifelse(S4, "[S4]", ""), nc$S4),
-            sfun(dim, nc$dim),
-            sprintf("%5.4g ", size),
-            sfun(unit, nc$unit),
-            sfun(ifelse(comment, "+!", ""), nc$comment),
-            style.clear()
-        )], sep="\n")
-    }, interrupt = {
-        cat(style.clear())
-    })
+        index.nchar <- ceiling(log10(1+nrow(x)))
+
+        # Field names
+        cat(sprintf(sprintf("%%%is", index.nchar+2), ""),
+            do.call(sprintf, as.list(c(fmt, "", xnames[-1]))), sep="")
+
+        # Content
+        cat(paste(
+            sprintf(sprintf("%%%ii: ", index.nchar), seq_len(nrow(x))),
+            apply(x, 1, function(x) do.call(sprintf, as.list(c(fmt, x)))),
+            sep="", collapse=""))
+        
+        # Summary
+        if(any(xsum != "")){
+            cat("Summary:\n",
+                sprintf(sprintf("%%%is", index.nchar+2), ""),
+                do.call(sprintf, as.list(c(fmt, xsum))), sep="")
+        }
+    }, interrupt=cat(style.clear()))
 }
 #' Subset a whos object
 #'
@@ -185,13 +186,17 @@ whos.options <- function(exclude, report.S4.size){
 #' @export
 whos.exclude <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    options(whos.exclude = union(getOption("whos.exclude"), x))
+    p <- getOption("synesthesia")
+    p$exclude <- union(p$exclude, x)
+    options(synesthesia = p)
 }
 #' @rdname whos.options
 #' @export
 whos.include <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    options(whos.exclude = setdiff(getOption("whos.exclude"), x))
+    p <- getOption("synesthesia")
+    p$exclude <- setdiff(p$exclude, x)
+    options(synesthesia = p)
 }
 
 #' Shortcut for calling whos without exclusion.
@@ -246,7 +251,6 @@ as.whos.data.table <- function(x){
 #' @rdname as.whos
 #' @export
 as.whos.data.frame <- function(x){
-    x <- as.data.table(x)
-    as.whos(x)
+    as.whos(as.data.table(x))
 }
 

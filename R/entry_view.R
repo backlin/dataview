@@ -23,11 +23,24 @@ entry.view <- function(x, i=1){
                                function(x) style.auto(x, x))),
                 sep="\n")
             if(!is.null(nrow(x)) && nrow(x) > 1){
-                inchar <- readline(sprintf("\nRow %i of %i. (n)ext, (p)revious, (f)irst, (l)ast, [number]: ",
+                inchar <- readline(sprintf("\nRow %i of %i. (n)ext, (p)revious, (f)irst, (l)ast, [number], [field]: ",
                                            i, nrow(x)))
-                i <- switch(tolower(inchar), n = i+1, p = i-1, f = 1, l = nrow(x),
-                            as.integer(inchar))
-                browsing <- !is.na(i) && 1 <= i && i <= nrow(x)
+                browser()
+                if(inchar %in% c("n", "p", "f", "l")){
+                    i <- switch(inchar, n=i+1, p=i-1, f=1, l=nrow(x))
+                } else if(grepl("^\\d+$", inchar) && !inchar %in% x.names){
+                    i <- as.integer(inchar)
+                } else if(inchar == ""){
+                    browsing <- FALSE
+                } else {
+                    inchar <- pmatch(inchar, x.names)
+                    if(!is.na(inchar)){
+                        print(summary(x[[inchar]]))
+                    } else {
+                        cat("Element not found.\n")
+                    }
+                }
+                browsing <- browsing && 1 <= i && i <= nrow(x)
             } else {
                 browsing <- FALSE
             }

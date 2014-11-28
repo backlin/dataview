@@ -33,21 +33,24 @@ browse <- function(x=.GlobalEnv, name){
         attach(x) # To get tab completion
         on.exit(detach(x))
     }
-
-    while(is.na(elem) || elem != ""){
-        cat("\nBrowsing ", name, "\n", sep="")
-        print(w)
-        elem <- readline("Select an element to inspect: ")
-        if(elem != ""){
-            if(grepl("^\\d+$", elem) && !elem %in% w$name){
-                i <- as.integer(elem)
-                if(is.na(w$name[i])){
-                    elem <- if(i > nrow(w)) NA else i
-                } else {
-                    elem <- w$name[i]
-                }
-            } else {
-                if(!elem %in% w$name){
+    interrupt <- structure(simpleCondition("User interrupt"),
+                           class=c("interrupt", "condition"))
+    invisible(tryCatch({
+        while(is.na(elem) || elem != ""){
+            cat("\nBrowsing ", name, "\n", sep="")
+            print(w)
+            elem <- readline("Select an element to inspect: ")
+            if(elem != ""){
+                if(grepl("^\\d+$", elem) && !elem %in% w$name){
+                    i <- as.integer(elem)
+                    if(is.na(w$name[i])){
+                        elem <- if(i > nrow(w)) NA else i
+                    } else {
+                        elem <- w$name[i]
+                    }
+                } else if(elem == "Q" && !"Q" %in% w$name){
+                    signalCondition(interrupt)
+                } else if(!elem %in% w$name){
                     i <- grep(sprintf("^%s", elem), w$name)
                     while(length(i) > 1){
                         cat("\n")
@@ -55,21 +58,22 @@ browse <- function(x=.GlobalEnv, name){
                         elem <- readline("Please specify: ")
                         if(grepl("^\\d+$", elem) && !elem %in% w$name[i]){
                             i <- i[as.integer(elem)]
+                        } else if(elem == "Q" && !"Q" %in% w$name){
+                            signalCondition(userAbort)
                         } else {
                             i <- grep(sprintf("^%s", elem), w$name)
                         }
                     }
                     elem <- if(is.na(i) || length(i) == 0) NA else w$name[i]
                 }
-            }
-            if(is.na(elem)){
-                cat("No matches, please try again. Enter blank or press ctrl+c to exit.\n")
-            } else {
-                if(isS4(x)){
-                    obj <- slot(x, elem)
-                    obj.name <- sprintf("%s@%s", name, elem)
+                if(is.na(elem)){
+                    cat("No matches, please try again. Enter blank or press ctrl+c to exit.\n")
                 } else {
-                    if(is.integer(elem)){
+                    # Get the object
+                    if(isS4(x)){
+                        obj <- slot(x, elem)
+                        obj.name <- sprintf("%s@%s", name, elem)
+                    } else if(is.integer(elem)){
                         obj <- x[[elem]]
                         obj.name <- sprintf("%s[[%i]]", name, elem)
                     } else {
@@ -77,23 +81,20 @@ browse <- function(x=.GlobalEnv, name){
                         obj.name <- sprintf("%s$%s", name,
                             if(elem == make.names(elem)) elem else sprintf("`%s`", elem))
                     }
+                    # Browse or show the object
+                    if(is.data.frame(obj)){
+                        entry.view(obj)
+                    } else if(is.list(obj)){
+                        browse(obj, obj.name)
+                    } else if(is.function(obj)){
+                        page(obj)
+                    } else {
+                        print(summary(obj))
+                    }
                 }
-                if(is.function(obj)){
-                    obj <- environment(obj)
-                    obj.name <- sprintf("environment(%s)", obj.name)
-                }
-                tryCatch({
-                    suppressWarnings(browse(obj, obj.name))
-                }, error = function(...){
-                    tryCatch({
-                        h <- head(obj)
-                        cat("Head of", obj.name, "\n")
-                        print(h)
-                    }, error = function(...){
-                        cat("Could not inspect object.\n")
-                    })
-                })
             }
         }
-    }
+    }, interrupt = function(cond){
+        signalCondition(cond)
+    }))
 }
