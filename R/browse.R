@@ -30,8 +30,10 @@ browse <- function(x=.GlobalEnv, name){
     }
 
     if(!identical(x, .GlobalEnv)){
-        attach(x) # To get tab completion
-        on.exit(detach(x))
+        try({
+            attach(x) # To get tab completion
+            on.exit(detach(x))
+        }, silent=TRUE)
     }
     interrupt <- structure(simpleCondition("User interrupt"),
                            class=c("interrupt", "condition"))
@@ -59,7 +61,7 @@ browse <- function(x=.GlobalEnv, name){
                         if(grepl("^\\d+$", elem) && !elem %in% w$name[i]){
                             i <- i[as.integer(elem)]
                         } else if(elem == "Q" && !"Q" %in% w$name){
-                            signalCondition(userAbort)
+                            signalCondition(interrupt)
                         } else {
                             i <- grep(sprintf("^%s", elem), w$name)
                         }
@@ -90,6 +92,7 @@ browse <- function(x=.GlobalEnv, name){
                         page(obj)
                     } else {
                         print(summary(obj))
+                        readline("Press enter to continue.")
                     }
                 }
             }

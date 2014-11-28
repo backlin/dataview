@@ -2,7 +2,7 @@ Encoding: UTF-8
 Package: synesthesia
 Type: Package
 Title: Colorful workspace overview
-Version: 1.2-3
+Version: 1.2-4
 Date: 2014-11-28
 Author: Christofer Backlin
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>

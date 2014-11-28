@@ -41,7 +41,7 @@ default.options <- function(){
                 }
             },
             bytes = object.size,
-            comment = comment
+            comment = function(x) !is.null(comment(x))
         ),
         print = list(
             bytes = function(x){

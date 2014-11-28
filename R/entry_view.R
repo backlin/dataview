@@ -10,6 +10,10 @@
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @export
 entry.view <- function(x, i=1){
+    try({
+        attach(x) # To get tab completion
+        on.exit(detach(x))
+    }, silent=TRUE)
     tryCatch({
         x.names <- if(is.null(names(x))) seq_along(x) else names(x)
         nc <- max(nchar(x.names))
@@ -25,7 +29,6 @@ entry.view <- function(x, i=1){
             if(!is.null(nrow(x)) && nrow(x) > 1){
                 inchar <- readline(sprintf("\nRow %i of %i. (n)ext, (p)revious, (f)irst, (l)ast, [number], [field]: ",
                                            i, nrow(x)))
-                browser()
                 if(inchar %in% c("n", "p", "f", "l")){
                     i <- switch(inchar, n=i+1, p=i-1, f=1, l=nrow(x))
                 } else if(grepl("^\\d+$", inchar) && !inchar %in% x.names){
@@ -36,6 +39,7 @@ entry.view <- function(x, i=1){
                     inchar <- pmatch(inchar, x.names)
                     if(!is.na(inchar)){
                         print(summary(x[[inchar]]))
+                        readline("Press enter to continue.")
                     } else {
                         cat("Element not found.\n")
                     }

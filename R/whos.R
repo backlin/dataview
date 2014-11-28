@@ -65,6 +65,10 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
             1:length(envir)
         }
     }
+    if(!is.null(names(accessors))){
+        accessors <- accessors[!names(accessors) %in% exclude &
+                               grepl(pattern, names(accessors))]
+    }
 
     if(length(accessors) == 0){
         NULL
@@ -83,7 +87,6 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
 
         structure(do.call(data.table, c(
             list(
-                excluded = if(is.null(names(accessors))) FALSE else names(accessors) %in% exclude,
                 style = obj.sapply(style.auto),
                 name = if(!is.null(names(accessors))) names(accessors) else NA
             ),
@@ -97,8 +100,6 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
 #' @export
 print.whos <- function(x, ...){
     # Remove columns without content
-    excluded <- x$excluded
-    x$excluded <- NULL
     x <- x[, !sapply(x, function(x) all(x %in% c(FALSE, NA))), with=FALSE]
 
     # Calculate summaries
@@ -111,12 +112,14 @@ print.whos <- function(x, ...){
     }, names(x), x)
 
     # Convert all to characters
-    x <- mapply(function(field, values){
-        val2str <- ifnull(getOpt("print")[[field]], as.character)
-        if(is.logical(values)){
-            ifelse(is.na(values), "", ifelse(values, sprintf("[%s]", field), ""))
-        } else ifelse(is.na(values), "", val2str(values))
-    }, names(x), x)
+    x <- matrix(ncol=ncol(x), mapply(function(field, values){
+        val2str <- getOpt("print")[[field]]
+        if(is.null(val2str)){
+            if(is.logical(values)){
+                ifelse(is.na(values), "", ifelse(values, sprintf("[%s]", field), ""))
+            } else ifelse(is.na(values), "", as.character(values))
+        } else val2str(values)
+    }, names(x), x))
 
     nc <- pmax(nchar(xnames), apply(x, 2, function(x) max(nchar(x))))[-1]
     align <- ifelse(getOpt("align")[xnames[-1]] %in% "right", "", "-")
@@ -135,7 +138,7 @@ print.whos <- function(x, ...){
             sep="", collapse=""))
         
         # Summary
-        if(any(xsum != "")){
+        if(any(xsum != "") && nrow(x) > 1){
             cat("Summary:\n",
                 sprintf(sprintf("%%%is", index.nchar+2), ""),
                 do.call(sprintf, as.list(c(fmt, xsum))), sep="")
@@ -152,7 +155,7 @@ print.whos <- function(x, ...){
 #' @noRd
 #' @export
 `[.whos` <- function(x, ...){
-    structure(as.data.table(x)[...], class=class(x))
+    as.whos(as.data.table(x)[...])
 }
 
 #' Set default behavior of the whos function
@@ -253,4 +256,3 @@ as.whos.data.table <- function(x){
 as.whos.data.frame <- function(x){
     as.whos(as.data.table(x))
 }
-
