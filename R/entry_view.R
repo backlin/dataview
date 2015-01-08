@@ -35,6 +35,8 @@ entry.view <- function(x, i=1){
                     i <- as.integer(inchar)
                 } else if(inchar == ""){
                     browsing <- FALSE
+                } else if(inchar == "Q" && !"Q" %in% x.names){
+                    interrupt()
                 } else {
                     inchar <- pmatch(inchar, x.names)
                     if(!is.na(inchar)){
@@ -49,7 +51,8 @@ entry.view <- function(x, i=1){
                 browsing <- FALSE
             }
         }
-    }, interrupt = function(){
+    }, interrupt = function(cond){
         cat(style.clear())
+        signalCondition(cond)
     })
 }

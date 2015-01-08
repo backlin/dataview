@@ -38,19 +38,22 @@ ifnull <- function(x, replacement=NA) if(is.null(x)) replacement else x
 #' @export
 whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
     # Interpret the `envir` argument if not already an environment
-    envir <- switch(class(envir)[1],
-        `character` = {
-            pattern <- envir
-            parent.frame()
-        },
-        `function` = environment(envir),
-        `integer` = as.environment(envir),
-        `numeric` = {
-            if(envir != as.integer(envir)) stop("Invalid `envir` argument")
-            as.environment(envir)
-        },
-        envir
-    )
+    if(is.function(envir)){
+        envir <- environment(envir)
+    } else {
+        envir <- switch(class(envir)[1],
+            `character` = {
+                pattern <- envir
+                parent.frame()
+            },
+            `integer` = as.environment(envir),
+            `numeric` = {
+                if(envir != as.integer(envir)) stop("Invalid `envir` argument")
+                as.environment(envir)
+            },
+            envir
+        )
+    }
     
     # Get names of objects in environment matching pattern
     accessors <- if(is.environment(envir)){
@@ -73,24 +76,28 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
     if(length(accessors) == 0){
         NULL
     } else {
-        # Make an object/property matrix (objects as rows, properties as columns)
         obj.sapply <- if(isS4(envir)){
             function(fun, ...) sapply(accessors, function(x) ifnull(fun(slot(envir, x))), ...)
         } else if(is.character(accessors)){
             # Unordered set of objects, as found in an environment
-            function(fun, ...) sapply(accessors, function(x) ifnull(fun(get(x, envir))), ...)
+            function(fun, ...) sapply(accessors, ..., FUN = function(x){
+                ifnull(tryCatch(fun(get(x, envir)), error=function(...) NULL))
+            })
         } else {
             # Ordered set of objects, as found in a data frame
             # Use the index numbers rather than names in case of duplicates
             function(fun, ...) sapply(envir, function(x, ...) ifnull(fun(x, ...)), ...)
         }
 
+        # Make an object/property matrix (objects as rows, properties as columns)
+        env.cols <- lapply(getOpt("columns")$envir, do.call, list(envir, accessors))
         structure(do.call(data.table, c(
             list(
                 style = obj.sapply(style.auto),
                 name = if(!is.null(names(accessors))) names(accessors) else NA
             ),
-            lapply(getOpt("columns"), obj.sapply)
+            env.cols[!sapply(env.cols, is.null)],
+            lapply(getOpt("columns")$object, obj.sapply)
         )), class=c("whos", "data.table", "data.frame"))
     }
 }

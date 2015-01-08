@@ -1,3 +1,8 @@
+interrupt <- function(){
+    signalCondition(structure(simpleCondition("User interrupt"),
+                              class=c("interrupt", "condition")))
+}
+
 #' Browse the contents of a nested data structure
 #' 
 #' Manually step in and out of the elements of complex data structure with
@@ -35,8 +40,6 @@ browse <- function(x=.GlobalEnv, name){
             on.exit(detach(x))
         }, silent=TRUE)
     }
-    interrupt <- structure(simpleCondition("User interrupt"),
-                           class=c("interrupt", "condition"))
     invisible(tryCatch({
         while(is.na(elem) || elem != ""){
             cat("\nBrowsing ", name, "\n", sep="")
@@ -51,7 +54,7 @@ browse <- function(x=.GlobalEnv, name){
                         elem <- w$name[i]
                     }
                 } else if(elem == "Q" && !"Q" %in% w$name){
-                    signalCondition(interrupt)
+                    interrupt()
                 } else if(!elem %in% w$name){
                     i <- grep(sprintf("^%s", elem), w$name)
                     while(length(i) > 1){
@@ -61,7 +64,7 @@ browse <- function(x=.GlobalEnv, name){
                         if(grepl("^\\d+$", elem) && !elem %in% w$name[i]){
                             i <- i[as.integer(elem)]
                         } else if(elem == "Q" && !"Q" %in% w$name){
-                            signalCondition(interrupt)
+                            interrupt()
                         } else {
                             i <- grep(sprintf("^%s", elem), w$name)
                         }
