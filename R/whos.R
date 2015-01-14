@@ -90,7 +90,7 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
         }
 
         # Make an object/property matrix (objects as rows, properties as columns)
-        env.cols <- lapply(getOpt("columns")$envir, do.call, list(envir, accessors))
+        env.cols <- lapply(getOpt("columns")$envir, function(f) f(envir, accessors))
         structure(do.call(data.table, c(
             list(
                 style = obj.sapply(style.auto),

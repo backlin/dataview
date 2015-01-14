@@ -58,8 +58,9 @@ default.options <- function(){
                 argument = function(env, nam){
                     if(!is.environment(env) || identical(env, .GlobalEnv))
                         return(NULL)
-                    f <- formals(sys.function(which(sapply(sys.frames(),
-                                                           identical, env))))
+                    stack.level <- sapply(sys.frames(), identical, env)
+                    if(!any(stack.level)) return(NULL)
+                    f <- formals(sys.function(which(stack.level)))
                     if(is.null(f)) return(NULL)
                     f.modified <- sapply(names(f), function(x){
                         tryCatch(!identical(f[[x]], get(x, env)),
@@ -70,9 +71,9 @@ default.options <- function(){
                     # also produced by quote(expr=).
                     # Read more at http://stackoverflow.com/a/27824791/840460
                     factor(ifelse(!nam %in% names(f), NA,
-                           ifelse(!is.na(f.modified[nam]) & f.modified[nam], "modified",
+                           ifelse(!is.na(f.modified[nam]) & f.modified[nam], "custom",
                            ifelse(f.missing[nam], "missing", "default"))),
-                           c("default", "modified", "missing"))
+                           c("default", "custom", "missing"))
                 }
             ),
             object = list(

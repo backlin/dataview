@@ -11,7 +11,7 @@
 #' @export
 entry.view <- function(x, i=1){
     try({
-        attach(x) # To get tab completion
+        suppressMessages(attach(x)) # To get tab completion
         on.exit(detach(x))
     }, silent=TRUE)
     tryCatch({

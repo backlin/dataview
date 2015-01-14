@@ -36,7 +36,7 @@ browse <- function(x=.GlobalEnv, name){
 
     if(!identical(x, .GlobalEnv)){
         try({
-            attach(x) # To get tab completion
+            suppressMessages(attach(x)) # To get tab completion
             on.exit(detach(x))
         }, silent=TRUE)
     }
