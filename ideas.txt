@@ -1,2 +1,0 @@
-factor scalar tolkas som numeric scalar i entry view
-
