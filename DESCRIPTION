@@ -2,8 +2,8 @@ Encoding: UTF-8
 Package: synesthesia
 Type: Package
 Title: Colorful workspace overview
-Version: 1.3-3
-Date: 2015-01-14
+Version: 1.3-4
+Date: 2015-02-18
 Author: Christofer Backlin
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
 Imports:
@@ -13,5 +13,6 @@ Description: This package provides clear and colorful ways of presenting the
     contents of the workspace, objects, and environment in terminal windows.
     Ideally this package should be used in terminals supporting xterm 256 colour
     mode, e.g. the standard Ubuntu terminal.
+Url: http://github.com/backlin/synesthesia
 License: GPL (>=2)
 LazyLoad: yes

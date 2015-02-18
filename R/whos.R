@@ -107,7 +107,8 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
 #' @export
 print.whos <- function(x, ...){
     # Remove columns without content
-    x <- x[, !sapply(x, function(x) all(x %in% c(FALSE, NA))), with=FALSE]
+    # Always keep the style column, even if no style is used, since it has a special function
+    x <- x[, c(TRUE, !sapply(x, function(x) all(x %in% c(FALSE, NA)))[-1]), with=FALSE]
 
     # Calculate summaries
     xnames <- names(x)
