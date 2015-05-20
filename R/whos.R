@@ -16,6 +16,7 @@ ifnull <- function(x, replacement=NA) if(is.null(x)) replacement else x
 #'   default: globalenv()
 #' @param pattern Regexp filtering of objects. Only objects matching the pattern
 #'   are displayed. Optional, default: show all objects.
+#' @param all.names Whether to show hidden objects.
 #' @param exclude A list of objects not to be displayed. To set a default exclusion
 #'   mask use the \code{whos.set.mask} function. If \code{whos.set.mask} is
 #'   called without a list of object names all objects currently in globalenv()
@@ -36,7 +37,7 @@ ifnull <- function(x, replacement=NA) if(is.null(x)) replacement else x
 #' @import xtermStyle
 #' @seealso whos.options, browse
 #' @export
-whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
+whos <- function(envir=parent.frame(), pattern=".", all.names, exclude=getOpt("exclude")){
     # Interpret the `envir` argument if not already an environment
     if(is.function(envir)){
         envir <- environment(envir)
@@ -57,7 +58,14 @@ whos <- function(envir=parent.frame(), pattern=".", exclude=getOpt("exclude")){
     
     # Get names of objects in environment matching pattern
     accessors <- if(is.environment(envir)){
-        structure(ls(envir=envir), names=ls(envir=envir))
+        if(missing(all.names)){
+            l <- ls(envir=envir, all.names=FALSE)
+            if(length(l) == 0)
+                l <- ls(all.names=TRUE, envir=envir)
+        } else {
+            l <- ls(all.names=all.names, envir=envir)
+        }
+        structure(l, names=l)
     } else if(isS4(envir)){
         structure(slotNames(envir), names=slotNames(envir))
     } else {
@@ -197,17 +205,17 @@ whos.options <- function(exclude, report.S4.size){
 #' @export
 whos.exclude <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    p <- getOption("synesthesia")
+    p <- getOption("dataview")
     p$exclude <- union(p$exclude, x)
-    options(synesthesia = p)
+    options(dataview = p)
 }
 #' @rdname whos.options
 #' @export
 whos.include <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    p <- getOption("synesthesia")
+    p <- getOption("dataview")
     p$exclude <- setdiff(p$exclude, x)
-    options(synesthesia = p)
+    options(dataview = p)
 }
 
 #' Shortcut for calling whos without exclusion.

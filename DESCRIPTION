@@ -1,18 +1,21 @@
 Encoding: UTF-8
-Package: synesthesia
+Package: dataview
 Type: Package
-Title: Colorful workspace overview
-Version: 1.3-4
-Date: 2015-02-18
-Author: Christofer Backlin
+Title:  Data and Workspace Browser for Terminals
+Version: 1.2.0
+Date: 2015-05-20
+Authors@R: person("Christofer", "Backlin", role = c("aut", "cre"), email = "christofer.backlin@medsci.uu.se")
+Author: Christofer Backlin [aut, cre]
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
 Imports:
     data.table,
-    xtermStyle (>= 3.0-2)
-Description: This package provides clear and colorful ways of presenting the
-    contents of the workspace, objects, and environment in terminal windows.
-    Ideally this package should be used in terminals supporting xterm 256 colour
-    mode, e.g. the standard Ubuntu terminal.
-Url: http://github.com/backlin/synesthesia
+	xtermStyle (>= 3.0.5)
+Description: This package provides tools for deciphering the contents of
+	unknown objects or environments from within the terminal,
+	a problem often encountered when working with unfamiliar packages or debugging complex functions.
+	If working in xterm256 or ansi terminals the output is coloured by default
+	to improve readability (e.g. the standard Ubuntu terminal).
+URL: http://github.com/backlin/dataview
+BugReports: https://github.com/backlin/dataview/issues
 License: GPL (>=2)
 LazyLoad: yes

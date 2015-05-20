@@ -1,25 +1,20 @@
-Synesthesia for R
-========
-A terminal tool for overviewing your workspace and objects in a clean, colorful and human readable way.
-
-If you prefer to do your R work in the terminal (probably in combination with Vim or Emacs)
-`synesthesia` is a great little tool for keeping track of cluttered workspaces and disecting obscure objects.
-It centers around the functions `whos` inspired by the same function in MATLAB,
-`entry.view` inspired by data base systems,
-and `heat.view` that can visualize long vectors in a very compact manner (especially factors).
+Data and Workspace Browser for Terminals 
+========================================
+[![](http://www.r-pkg.org/badges/version/dataview)](http://cran.rstudio.com/web/packages/dataview/index.html)
+[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/dataview)](http://cran.r-project.org/web/packages/dataview/index.html)
+Terminal-based-tools for viewing data, summarizing contents of objects and environments, deciphering unknown objects, and aid debugging complex functions.
+It was developed to facilitate working with R in combination with the brilliant text editor [vim](http://www.vim.org) or over ssh connections without RStudio server,
+but it works fine within RStudio or other GUIs too.
 
 Installation
 ------------
-As it is a complete reimplementation of the `dataview` package, the installation procedure is a bit dirty at the moment.
-It will soon take over as the official release and be published on CRAN, and `dataview` will be discontinued. 
+The latest official release of the package is available on CRAN.
 ```
-library(devtools)
-install_github("backlin/xtermStyle")
-install_github("backlin/dataview@develop")
+install.packages("dataview")
 ```
-Then you typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
+You typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
 ```
-require(synesthesia)
+require(dataview)
 whos.exclude(ls())
 ```
 and perhaps also
@@ -29,15 +24,19 @@ print.factor <- heat.view
 
 Usage & Functionality
 ---------------------
-This is what it does:
+`dataview` centers around the functions `whos` inspired by the same function in MATLAB,
+`entry.view` inspired by data base systems,
+and `heat.view` that can visualize long vectors in a very compact manner (especially factors).
 
-![Synesthesia demo](https://raw.githubusercontent.com/backlin/dataview/images/images/synesthesia.png)
+![simple structures](https://raw.githubusercontent.com/backlin/dataview/images/images/whos_entry_heat.png)
 
-If you find yourself calling `whos` often, you probably want to check out the `browse` function too.
+More complex objects are however better studied with the `browse` function that combines the above functions in stepwise manner. Note that it also supports partial name matching and tab completion!
+
+![complex structures](https://raw.githubusercontent.com/backlin/dataview/images/images/browse.png)
 
 Colors
 ------
-The color schemes used by Synesthesia is defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
+The color schemes used by `dataview` are defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
 ```
 require(xtermStyle)
 style.palette("light") # Designed for dark terminal background
