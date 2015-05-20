@@ -28,12 +28,11 @@ Usage & Functionality
 ---------------------
 The functions `whos`, `entry.view`, and `heat.view` can be used to summarize the contents of simple objects.
 
-![simple structures](https://raw.githubusercontent.com/backlin/dataview/images/images/inspector.png)
+![simple structures](https://raw.githubusercontent.com/backlin/inspectr/images/images/whos_entry_heat.png)
 
-More complex objects are better studied with the `browse` function.
+More complex objects are better studied with the `browse` function (also supports partial name matching and tab completion!).
 
-![complex structures](https://raw.githubusercontent.com/backlin/dataview/images/images/browse.png)
-
+![complex structures](https://raw.githubusercontent.com/backlin/inspectr/images/images/browse.png)
 
 Colors
 ------
