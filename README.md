@@ -2,6 +2,7 @@ Data and Workspace Browser for Terminals
 ========================================
 [![](http://www.r-pkg.org/badges/version/dataview)](http://cran.rstudio.com/web/packages/dataview/index.html)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/dataview)](http://cran.r-project.org/web/packages/dataview/index.html)
+
 Terminal-based-tools for viewing data, summarizing contents of objects and environments, deciphering unknown objects, and aid debugging complex functions.
 It was developed to facilitate working with R in combination with the brilliant text editor [vim](http://www.vim.org) or over ssh connections without RStudio server,
 but it works fine within RStudio or other GUIs too.
