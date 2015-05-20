@@ -1,23 +1,21 @@
 Encoding: UTF-8
-Package: inspectr
+Package: dataview
 Type: Package
-Title: Inspect and decipher complex objects and functions
-Version: 1.0.2
+Title:  Data and Workspace Browser for Terminals
+Version: 1.2.0
 Date: 2015-05-20
 Authors@R: person("Christofer", "Backlin", role = c("aut", "cre"), email = "christofer.backlin@medsci.uu.se")
 Author: Christofer Backlin [aut, cre]
 Maintainer: Christofer Backlin <christofer.backlin@medsci.uu.se>
 Imports:
     data.table,
-	xtermStyle (>= 3.0.4)
+	xtermStyle (>= 3.0.5)
 Description: This package provides tools for deciphering the contents of
 	unknown objects or environments from within the terminal,
 	a problem often encountered when working with unfamiliar packages or debugging complex functions.
 	If working in xterm256 or ansi terminals the output is coloured by default
 	to improve readability (e.g. the standard Ubuntu terminal).
-	This package is the successor of the dataview package, which strayed more
-	and more away from it's original aim.
-URL: http://github.com/backlin/inspectr
-BugReports: https://github.com/backlin/inspectr/issues
+URL: http://github.com/backlin/dataview
+BugReports: https://github.com/backlin/dataview/issues
 License: GPL (>=2)
 LazyLoad: yes

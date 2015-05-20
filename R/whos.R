@@ -205,17 +205,17 @@ whos.options <- function(exclude, report.S4.size){
 #' @export
 whos.exclude <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    p <- getOption("inspector")
+    p <- getOption("dataview")
     p$exclude <- union(p$exclude, x)
-    options(inspector = p)
+    options(dataview = p)
 }
 #' @rdname whos.options
 #' @export
 whos.include <- function(x=NULL, pattern, envir=parent.frame()){
     if(!missing(pattern)) x <- union(x, ls(envir=envir, pattern=pattern))
-    p <- getOption("inspector")
+    p <- getOption("dataview")
     p$exclude <- setdiff(p$exclude, x)
-    options(inspector = p)
+    options(dataview = p)
 }
 
 #' Shortcut for calling whos without exclusion.

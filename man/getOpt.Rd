@@ -13,9 +13,9 @@ default.options()
 \item{x}{Option to retrieve.}
 }
 \description{
-The inspector package contains a number of option for tailoring its
+The dataview package contains a number of option for tailoring its
 behaviour. These options are stored as a named list in a single global
-varible named "inspector". To overwrite an option fetch the default values
+varible named "dataview". To overwrite an option fetch the default values
 with \code{default.options}, modify the returned results and set it back as
 in the example below.
 }
@@ -51,7 +51,7 @@ return value of \code{default.options}.
 # to improve execution time.
 opt <- default.options()
 opt$columns$bytes <- function(x) if(isS4(x)) NA else object.size(x)
-options(inspector = opt)
+options(dataview = opt)
 }
 \author{
 Christofer \enc{Bäcklin}{Backlin}
