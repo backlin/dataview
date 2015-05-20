@@ -2,7 +2,7 @@ Encoding: UTF-8
 Package: dataview
 Type: Package
 Title:  Data and Workspace Browser for Terminals
-Version: 1.2.0
+Version: 2.1.0
 Date: 2015-05-20
 Authors@R: person("Christofer", "Backlin", role = c("aut", "cre"), email = "christofer.backlin@medsci.uu.se")
 Author: Christofer Backlin [aut, cre]
