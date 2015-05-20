@@ -1,8 +1,8 @@
 #' Retrieves package options
 #' 
-#' The synesthesia package contains a number of option for tailoring its
+#' The inspector package contains a number of option for tailoring its
 #' behaviour. These options are stored as a named list in a single global
-#' varible named "synesthesia". To overwrite an option fetch the default values
+#' varible named "inspector". To overwrite an option fetch the default values
 #' with \code{default.options}, modify the returned results and set it back as
 #' in the example below.
 #'
@@ -37,11 +37,11 @@
 #' # to improve execution time.
 #' opt <- default.options()
 #' opt$columns$bytes <- function(x) if(isS4(x)) NA else object.size(x)
-#' options(synesthesia = opt)
+#' options(inspector = opt)
 #' @author Christofer \enc{Bäcklin}{Backlin}
 #' @export
 getOpt <- function(x){
-    ifnull(getOption("synesthesia")[[x]],
+    ifnull(getOption("inspector")[[x]],
            default.options()[[x]])
 }
 #' @rdname getOpt

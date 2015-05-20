@@ -1,25 +1,22 @@
-Synesthesia for R
-========
-A terminal tool for overviewing your workspace and objects in a clean, colorful and human readable way.
+The R inspector
+===============
+Tools for overviewing the contents of objects and environments in a clean, colorful and human readable way.
+The package was developed to facilitate the deciphering of unknown objects and debugging complex functions.
 
-If you prefer to do your R work in the terminal (probably in combination with Vim or Emacs)
-`synesthesia` is a great little tool for keeping track of cluttered workspaces and disecting obscure objects.
+
 It centers around the functions `whos` inspired by the same function in MATLAB,
 `entry.view` inspired by data base systems,
 and `heat.view` that can visualize long vectors in a very compact manner (especially factors).
 
 Installation
 ------------
-As it is a complete reimplementation of the `dataview` package, the installation procedure is a bit dirty at the moment.
-It will soon take over as the official release and be published on CRAN, and `dataview` will be discontinued. 
+The latest official release of the package is available on CRAN.
 ```
-library(devtools)
-install_github("backlin/xtermStyle")
-install_github("backlin/dataview@develop")
+install.packages("inspectr")
 ```
-Then you typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
+You typically also want to add these lines to the end of your `~/.Rprofile` to auto-load the package and hide all objects created during the startup
 ```
-require(synesthesia)
+require(inspectr)
 whos.exclude(ls())
 ```
 and perhaps also
@@ -29,15 +26,18 @@ print.factor <- heat.view
 
 Usage & Functionality
 ---------------------
-This is what it does:
+The functions `whos`, `entry.view`, and `heat.view` can be used to summarize the contents of simple objects.
 
-![Synesthesia demo](https://raw.githubusercontent.com/backlin/dataview/images/images/synesthesia.png)
+![simple structures](https://raw.githubusercontent.com/backlin/dataview/images/images/inspector.png)
 
-If you find yourself calling `whos` often, you probably want to check out the `browse` function too.
+More complex objects are better studied with the `browse` function.
+
+![complex structures](https://raw.githubusercontent.com/backlin/dataview/images/images/browse.png)
+
 
 Colors
 ------
-The color schemes used by Synesthesia is defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
+The color schemes used by Inspector are defined in the `xtermStyle` package. To change the default palette (dark on light terminal background) you must attach it and do the following:
 ```
 require(xtermStyle)
 style.palette("light") # Designed for dark terminal background
